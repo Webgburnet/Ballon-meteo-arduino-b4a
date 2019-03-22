@@ -1,0 +1,67 @@
+﻿Version=5.02
+NumberOfModules=0
+Build1=Default,aturkeyforone.com
+ManifestCode='This code will be applied to the manifest file during compilation.~\n~'You do not need to modify it in most cases.~\n~'See this link for for more information: http://www.basic4ppc.com/forum/showthread.php?p=78136~\n~AddManifestText(~\n~<uses-sdk android:minSdkVersion="4" android:targetSdkVersion="14"/>~\n~<supports-screens android:largeScreens="true" ~\n~    android:normalScreens="true" ~\n~    android:smallScreens="true" ~\n~    android:anyDensity="true"/>)~\n~SetApplicationAttribute(android:icon, "@drawable/icon")~\n~SetApplicationAttribute(android:label, "$LABEL$")~\n~'End of default text.~\n~
+IconFile=
+NumberOfFiles=2
+File1=camera_ip.bal
+File2=menu.bal
+NumberOfLibraries=1
+Library1=core
+@EndOfDesignText@
+#Region Module Attributes
+	#FullScreen: True
+	#IncludeTitle: True
+	#ApplicationLabel: Test Camera Edimax
+	#VersionCode: 1
+	#VersionName: 
+	#SupportedOrientations: unspecified
+	#CanInstallToExternalStorage: False
+#End Region
+
+'Activity module
+Sub Process_Globals
+	'These global variables will be declared once when the application starts.
+	'These variables can be accessed from all modules.
+
+End Sub
+
+Sub Globals
+	'These global variables will be redeclared each time the activity is created.
+	'These variables can only be accessed from this module.
+	Dim WebView1 As WebView
+	Private Button_asp As Button
+	Private Button_CGI As Button
+	Private Menu_Button As Button
+End Sub
+
+Sub Activity_Create(FirstTime As Boolean)
+	'Do not forget to load the layout file created with the visual designer. For example:
+	Activity.LoadLayout("menu")
+End Sub
+
+Sub Activity_Resume
+
+End Sub
+
+Sub Activity_Pause (UserClosed As Boolean)
+
+End Sub
+
+
+
+Sub Button_CGI_Click
+	Activity.RemoveAllViews
+	Activity.LoadLayout("camera_ip")
+	WebView1.LoadURL("http://192.168.1.18:8080/snapshot.cgi")
+End Sub
+Sub Button_asp_Click
+	Activity.RemoveAllViews
+	Activity.LoadLayout("camera_ip")
+	WebView1.LoadURL("http://192.168.1.18:8080/live.asp?r=20141126")
+End Sub
+Sub Menu_Button_Click
+	Activity.RemoveAllViews
+	Activity.LoadLayout("menu")
+	WebView1.RemoveView
+End Sub
