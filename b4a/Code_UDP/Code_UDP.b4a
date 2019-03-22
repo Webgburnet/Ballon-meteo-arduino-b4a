@@ -1,0 +1,93 @@
+﻿Version=5.02
+NumberOfModules=0
+Build1=Default,b4a.example
+Build2=test_udp,b4a.example.test.udp
+ManifestCode='This code will be applied to the manifest file during compilation.~\n~'You do not need to modify it in most cases.~\n~'See this link for for more information: http://www.basic4ppc.com/forum/showthread.php?p=78136~\n~AddManifestText(~\n~<uses-sdk android:minSdkVersion="4" android:targetSdkVersion="14"/>~\n~<supports-screens android:largeScreens="true" ~\n~    android:normalScreens="true" ~\n~    android:smallScreens="true" ~\n~    android:anyDensity="true"/>)~\n~SetApplicationAttribute(android:icon, "@drawable/icon")~\n~SetApplicationAttribute(android:label, "$LABEL$")~\n~'End of default text.~\n~
+IconFile=
+NumberOfFiles=1
+File1=layout1.bal
+NumberOfLibraries=5
+Library1=byteconverter
+Library2=core
+Library3=network
+Library4=udp
+Library5=randomaccessfile
+@EndOfDesignText@
+#Region Module Attributes
+	#FullScreen: False
+	#IncludeTitle: True
+	#ApplicationLabel: UDP Test Arduino
+	#VersionCode: 1
+	#VersionName: 
+	#SupportedOrientations: portrait
+	#CanInstallToExternalStorage: False
+#End Region
+
+Sub Process_Globals
+    Dim Adressepc As String
+	
+End Sub
+
+Sub Globals
+	Private Connexion As Button
+	Private IP_Arduino_EditText As EditText
+	Dim button1 As Button
+	Dim EditText1 As EditText
+	Dim Label1 As Label
+	Private Arrete As Button
+	Private Messages As Label
+	Private Donnee_capteur As Label
+	Private Acquerir_capteur As Button
+
+End Sub
+
+Sub Activity_Create(FirstTime As Boolean)
+    Activity.LoadLayout("layout1")
+    UDP.Initialise(3200)
+	
+End Sub
+
+Sub Connexion_Click
+	Adressepc=IP_Arduino_EditText.text
+End Sub
+
+Sub button1_click
+	Dim emission() As Byte
+	Dim bc As ByteConverter
+	Dim message As String
+	message=EditText1.Text'"EPrise"
+	Label1.Text=message
+	emission=bc.StringToBytes(message,"ASCII")
+	UDP.emission(Adressepc,5500,emission)
+End Sub
+	
+Sub UDP_PacketArrived (packet As UDPPacket)
+    Dim message As String
+	message=UDP.reception(packet)
+	If message="acknowledged" Then
+   		Label1.Text=message
+	Else
+		Donnee_capteur.Text=message
+	End If
+		
+End Sub
+
+Sub Arrete_Click
+	Dim emission() As Byte
+	Dim bc As ByteConverter
+	Dim message As String
+	message="Arrete"
+	Messages.Text="Arreter le Store"
+	emission=bc.StringToBytes(message,"ASCII")
+	UDP.emission(Adressepc,5500,emission)
+End Sub
+
+Sub Acquerir_capteur_Click
+	Dim emission() As Byte
+	Dim bc As ByteConverter
+	Dim message As String
+	message="Acquer"
+	Messages.Text="Acquisition des capteurs"
+	emission=bc.StringToBytes(message,"ASCII")
+	UDP.emission(Adressepc,5500,emission)
+End Sub
