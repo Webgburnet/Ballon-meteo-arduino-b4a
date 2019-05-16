@@ -1,15 +1,11 @@
 ﻿Version=5.02
 NumberOfModules=0
 Build1=Default,b4a.example
-Build2=test_udp,b4a.example.test.udp
+Build2=Ballon,b4a.ballon.meteo
 ManifestCode='This code will be applied to the manifest file during compilation.~\n~'You do not need to modify it in most cases.~\n~'See this link for for more information: http://www.basic4ppc.com/forum/showthread.php?p=78136~\n~AddManifestText(~\n~<uses-sdk android:minSdkVersion="4" android:targetSdkVersion="14"/>~\n~<supports-screens android:largeScreens="true" ~\n~    android:normalScreens="true" ~\n~    android:smallScreens="true" ~\n~    android:anyDensity="true"/>)~\n~SetApplicationAttribute(android:icon, "@drawable/icon")~\n~SetApplicationAttribute(android:label, "$LABEL$")~\n~'End of default text.~\n~
 IconFile=
-NumberOfFiles=5
-File1=arduino.bal
-File2=camera_ip.bal
-File3=connexion.bal
-File4=layout1.bal
-File5=menu.bal
+NumberOfFiles=1
+File1=layout1.bal
 NumberOfLibraries=5
 Library1=byteconverter
 Library2=core
@@ -18,30 +14,30 @@ Library4=udp
 Library5=randomaccessfile
 @EndOfDesignText@
 #Region Module Attributes
-	#FullScreen: False
-	#IncludeTitle: True
-	#ApplicationLabel: UDP Test Arduino
+	#FullScreen: True
+	#IncludeTitle: False
+	#ApplicationLabel: Ballon Meteo
 	#VersionCode: 1
 	#VersionName: 
-	#SupportedOrientations: portrait
+	#SupportedOrientations: landscape
 	#CanInstallToExternalStorage: False
 #End Region
 
 Sub Process_Globals
     Dim Adressepc As String
-	
+	Dim etat_reception As Int
 End Sub
 
 Sub Globals
 	Private Connexion As Button
 	Private IP_Arduino_EditText As EditText
-	Dim button1 As Button
 	Dim EditText1 As EditText
 	Dim Label1 As Label
 	Private Messages As Label
 	Private Donnee_capteur As Label
 	Private Acquerir_capteur As Button
-	Private Camera_ip_WebView As WebView
+	Private WebView1 As WebView
+	Private Button2 As Button
 End Sub
 
 Sub Activity_Create(FirstTime As Boolean)
@@ -52,17 +48,19 @@ End Sub
 
 Sub Connexion_Click
 	Adressepc=IP_Arduino_EditText.text
-	Camera_ip_WebView.LoadURL("http://192.168.1.18:8080/snapshot.cgi")
 End Sub
+
 	
 Sub UDP_PacketArrived (packet As UDPPacket)
     Dim message As String
 	message=UDP.reception(packet)
 	If message="acknowledged" Then
    		Label1.Text=message
-	Else
+		etat_reception=0
+	Else 
 		Donnee_capteur.Text=message
 	End If
+	
 		
 End Sub
 
@@ -71,7 +69,10 @@ Sub Acquerir_capteur_Click
 	Dim bc As ByteConverter
 	Dim message As String
 	message="Acquer"
-	Messages.Text="Acquisition des capteurs"
 	emission=bc.StringToBytes(message,"ASCII")
 	UDP.emission(Adressepc,5500,emission)
+End Sub
+
+Sub Button2_Click
+	WebView1.LoadUrl("http://192.168.2.250:8080/index.asp")
 End Sub

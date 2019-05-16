@@ -2,6 +2,8 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
+#include <WiFi.h>
+#include <WiFiUdp.h>
 #include <TinyGPS++.h>
 #include "SHT31.h"
 #include "MutichannelGasSensor.h"
@@ -14,7 +16,6 @@
 #define TX_CO2 A9
 #define RX_GPS A10
 #define TX_GPS A11
-
 
 static const uint32_t GPSBaud = 9600;
 
@@ -65,6 +66,17 @@ unsigned long timer1=0;
 unsigned long timer2=0;
 unsigned long timer3=0;
 
+//Shield Ethernet sans Aoe Numero 2
+int status = WL_IDLE_STATUS;
+//char ssid[] = "MarcusEtire";         // Nom du réseau wifi
+//char pass[] = "5D9D659735CE67DD367942A137";       // votre mot de passe réseau wifi(utilisez pour WPA ou comme clé pour WEP)
+char ssid[] = "Sti-2k18-SIN";         // Nom du réseau wifi
+char pass[] = "Sti-2k18-Sin";       // votre mot de passe réseau wifi(utilisez pour WPA ou comme clé pour WEP)
+int keyIndex = 0;                 // votre numéro d'index de clé de réseau (nécessaire uniquement pour WEP)
+unsigned int localPort = 5500;        // port local sur lequel écouter
+
+WiFiUDP Udp;
+
 void setup()
 {
   //Inistialisation du GPS
@@ -101,24 +113,100 @@ void setup()
   //Particules fines
   Serial.println("Initialisation capteur Particules Fines");
   pinMode(pin_dust,INPUT);
+  delay(1000);
+    //Initialisation Wifi
+  status = WiFi.begin(ssid,pass);
+  printWifiStatus();
+  Udp.begin(localPort);
+
+  delay (1000);
 
   //Carte SD
   Serial.print("Initialisation de la carte SD ...");
 
-  // voir si la carte est présente et peut être initialisée:
+  // voir si la carte SD est présente et peut être initialisée:
   if (!SD.begin(chipSelect)) 
   {
     Serial.println("Carte manquante ou non présente");
   }
   Serial.println("carte initialisée !");
-  
+
   Serial.println("Fin Setup \n");
 }
 
 void loop()
 {
   //Serial.println("Debut Loop");
-  
+
+     // Protocole Udp
+  int Size=Udp.parsePacket();
+  char message[Size];
+  String conv_message_to_string;
+  if(Size)
+  {
+    // lit le paquet dans packetBufffer
+    Udp.read(message, Size);
+    int cases = 0;
+    while (cases != Size)
+    {
+      conv_message_to_string = conv_message_to_string + message[cases];
+      cases = cases+1;
+    }
+    
+    Serial.print("Paquet reçu de taille : ");
+    Serial.println(Size);
+    Serial.print("Adresse IP de  ");
+    IPAddress remote = Udp.remoteIP();
+    Serial.print(remote);
+    Serial.print(", sur le port ");
+    Serial.println(Udp.remotePort());
+    Serial.print("Msg UDP:");
+    Serial.println(conv_message_to_string);
+
+    if(conv_message_to_string=="Acquer")
+    {
+      Serial.print("Le message est : ");
+      Serial.print("Capteur actualisé");
+      
+      delay(1);
+      
+      Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+      Udp.write("CO2=");
+      Udp.print(CO2PPM);
+      Udp.write("ppm");
+      Udp.write(" CO=");
+      Udp.print((int)co);
+      Udp.write("ppm");
+      Udp.write("\n");
+      Udp.write("Dust=");
+      Udp.print((int)concentration);
+      Udp.write(" P=");
+      Udp.print((int)pression);
+      Udp.write("hPa");
+      Udp.write("\n");
+      Udp.write("H=");
+      Udp.print((int)hum);
+      Udp.write("%RH");
+      Udp.write(" T=");
+      Udp.print(temp);
+      Udp.write("C");
+      Udp.write("\n");
+//      Udp.write("P=");
+//      Udp.print(pression);
+//      Udp.write("Pa");
+//      Udp.write("\n");
+      Udp.endPacket();
+    }
+    else
+    {
+      char  ReplyBuffer[] = "acknowledged";
+      Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+      Udp.write(ReplyBuffer);
+      Udp.endPacket();
+    }
+  }
+  else
+  {
   //Particules Fines
   if (digitalRead(pin_dust) == HIGH)
   {
@@ -160,7 +248,7 @@ void loop()
     
     //BME 680 : Pression
     bme680.read_sensor_data(); 
-    pression = bme680.sensor_result_value.pressure;
+    pression = bme680.sensor_result_value.pressure/100;
     
     //SHT31 Temperature + Humidite
     temp = sht31.getTemperature();
@@ -179,7 +267,7 @@ void loop()
     //Affichage Valeurs sur le Moniteur Serie
     Serial.print("Pression = ");
     Serial.print(pression);
-    Serial.println(" Pa");
+    Serial.println(" hPa");
     Serial.print("Temp = "); 
     Serial.print(temp);
     Serial.println(" C");
@@ -260,6 +348,7 @@ void loop()
   }
 
   //Serial.println("Fin Loop \n");
+  }
 }
 
 void displayInfo()
@@ -362,4 +451,25 @@ bool dataRecieve(void)
     CO2PPM = (int)data[2] * 256 + (int)data[3];
 
     return true;
+}
+
+//Afficher le Statut du Shield Wifi
+void printWifiStatus() {
+  // affiche le SSID du réseau auquel vous êtes connecté :
+  Serial.print("SSID : ");
+  Serial.println(WiFi.SSID());
+
+  // affiche l'adresse IP du Shield WiFi :
+  IPAddress ip(192,168,2,123);//ip = WiFi.localIP(); //
+  WiFi.config(ip);
+  Serial.print("Addresse IP : ");
+  Serial.println(ip);
+  Serial.print("Addresse IP : ");
+  Serial.println(WiFi.localIP());
+
+  // affiche la longeur du signal reçu :
+  long rssi = WiFi.RSSI();
+  Serial.print("longeur du Signal (RSSI) : ");
+  Serial.print(rssi);
+  Serial.println(" dBm");
 }

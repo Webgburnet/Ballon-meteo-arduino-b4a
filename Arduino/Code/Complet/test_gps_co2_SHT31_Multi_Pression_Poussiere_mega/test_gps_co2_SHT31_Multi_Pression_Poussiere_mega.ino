@@ -1,20 +1,16 @@
 #include <SoftwareSerial.h>
 #include <Wire.h>
-#include <SPI.h>
-#include <SD.h>
 #include <TinyGPS++.h>
 #include "SHT31.h"
 #include "MutichannelGasSensor.h"
 #include "seeed_bme680.h"
 
-#define chipSelect 4 //Carte SD 
 #define IIC_ADDR_BME  uint8_t(0x76)
 #define pin_dust 8
 #define RX_CO2 A8
 #define TX_CO2 A9
 #define RX_GPS A10
 #define TX_GPS A11
-
 
 static const uint32_t GPSBaud = 9600;
 
@@ -63,7 +59,6 @@ int milliseconde=0;
 
 unsigned long timer1=0;
 unsigned long timer2=0;
-unsigned long timer3=0;
 
 void setup()
 {
@@ -74,6 +69,7 @@ void setup()
   //Initialisation du GPS
   Serial.print("Initialisation du GPS, version : ");
   serial_GPS.begin(GPSBaud);
+  
   Serial.println(TinyGPSPlus::libraryVersion());
   Serial.println();
 
@@ -87,30 +83,18 @@ void setup()
   
 
   //Capteur de CO
-  Serial.print("Initialisation capteur Multigaz ");
+  Serial.print("Initialisation capteur Multigaz, ");
   gas.begin(0x04);//Adresse I2C
   gas.powerOn();
    
   //BME680
-  while (!bme680.init())
-  {
-    Serial.println("BME680 non branché");
-  }  
+  while (!bme680.init()) 
+    Serial.println("Branché le BME680");
   Serial.println("Initialisation capteur BME680");
 
   //Particules fines
   Serial.println("Initialisation capteur Particules Fines");
   pinMode(pin_dust,INPUT);
-
-  //Carte SD
-  Serial.print("Initialisation de la carte SD ...");
-
-  // voir si la carte est présente et peut être initialisée:
-  if (!SD.begin(chipSelect)) 
-  {
-    Serial.println("Carte manquante ou non présente");
-  }
-  Serial.println("carte initialisée !");
   
   Serial.println("Fin Setup \n");
 }
@@ -187,8 +171,7 @@ void loop()
     Serial.print(hum);
     Serial.println("%");
     Serial.print("CO2 : ");
-    Serial.print(CO2PPM);
-    Serial.println("ppm");
+    Serial.println(CO2PPM);
     Serial.print("CO = ");
     Serial.print(co);
     Serial.println(" ppm");
@@ -208,57 +191,7 @@ void loop()
     duration=0;
     timer2=millis();
   }
-
-  // Carte SD
-  // crée une chaîne pour assembler les données à consigner:
-   String dataString = "";
-   dataString += String(pression);
-   dataString += ", ";
-   dataString += String(temp);
-   dataString += ", ";
-   dataString += String(hum);
-   dataString += ", ";
-   dataString += String(CO2PPM);
-   dataString += ", ";
-   dataString += String(co);
-   dataString += ", ";
-   dataString += String(concentration);
-   dataString += ", ";
-   dataString += String(latitude,6);
-   dataString += ", ";
-   dataString += String(longitude,6);
-   dataString += ", ";
-   dataString += String(jour);
-   dataString += "/";
-   dataString += String(mois);
-   dataString += "/";
-   dataString += String(annee);
-   dataString += ", ";
-   dataString += String(heure);
-   dataString += ":";
-   dataString += String(minutes);
-   dataString += ":";
-   dataString += String(seconde);
-   dataString += ", ";
    
-    
-  // ouvre le fichier. notez qu'un seul fichier peut être ouvert à la fois,
-  // vous devez donc fermer celui-ci avant d'en ouvrir un autre.
-  File dataFile = SD.open("datalog.txt", FILE_WRITE);
-
-  // si le fichier est disponible, écrivez-le:
-  if (dataFile) 
-  {
-    dataFile.println(dataString);
-    dataFile.close();
-//    Serial.println(dataString);
-  }
-  // si le fichier n'est pas ouvert, une erreur apparaît:
-  else 
-  {
-    Serial.println("erreur d'ouverture datalog.txt");
-  }
-
   //Serial.println("Fin Loop \n");
 }
 
@@ -347,12 +280,12 @@ bool dataRecieve(void)
         }
     }
 
-//    for(int j=0; j<9; j++)
-//    {
-//        Serial.print(data[j]);
-//        Serial.print(" ");
-//    }
-//    Serial.println("");
+    for(int j=0; j<9; j++)
+    {
+        Serial.print(data[j]);
+        Serial.print(" ");
+    }
+    Serial.println("");
 
     if((i != 9) || (1 + (0xFF ^ (byte)(data[1] + data[2] + data[3] + data[4] + data[5] + data[6] + data[7]))) != data[8])
     {
